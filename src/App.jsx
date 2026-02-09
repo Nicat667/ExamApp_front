@@ -6,8 +6,9 @@ import Navbar from './components/Navbar';
 
 // Pages
 import Login from './pages/Auth/Login';
-import Register from './pages/Auth/Register'; // NEW: Import Register
+import Register from './pages/Auth/Register';
 import StudentDashboard from './pages/Dashboard/StudentDashboard';
+import AdminDashboard from './pages/Dashboard/AdminDashboard'; // NEW: Import Admin Dashboard
 import ExamSetup from './pages/Exam/ExamSetup';
 import ExamInterface from './pages/Exam/ExamInterface';
 import ExamResult from './pages/Exam/ExamResult';
@@ -22,20 +23,31 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        {/* Navbar stays at the top for both Student and Admin for now */}
         <Navbar />
+        
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} /> {/* NEW: Register Route */}
+          <Route path="/register" element={<Register />} />
           
-          {/* Protected Routes (Require Login) */}
+          {/* Student Routes */}
           <Route path="/dashboard" element={
             <PrivateRoute>
               <StudentDashboard />
             </PrivateRoute>
           } />
 
+          {/* NEW: Admin Route */}
+          {/* We reuse PrivateRoute for now since we are just testing */}
+          <Route path="/admin/dashboard" element={
+            <PrivateRoute>
+              <AdminDashboard />
+            </PrivateRoute>
+          } />
+
+          {/* Exam Routes */}
           <Route path="/exam/setup" element={
             <PrivateRoute>
               <ExamSetup />
@@ -54,7 +66,7 @@ function App() {
             </PrivateRoute>
           } />
 
-          {/* Catch-all: Redirect unknown pages to login */}
+          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/login" />} />
 
         </Routes>

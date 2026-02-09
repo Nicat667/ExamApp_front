@@ -112,7 +112,7 @@ const ExamInterface = () => {
           
           {filterMarked && (
             <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 px-4 py-3 mb-8 rounded-xl text-center font-bold text-sm flex items-center justify-center gap-3 border border-amber-200 dark:border-amber-800">
-              <AlertTriangle className="w-5 h-5" /> REVIEW MODE: Showing {marked.length} Marked Questions Only
+              <AlertTriangle className="w-5 h-5" />  Marked Questions
             </div>
           )}
 
@@ -132,7 +132,7 @@ const ExamInterface = () => {
                 : 'text-gray-400 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300'}`}
             >
               <Bookmark className={`w-4 h-4 ${marked.includes(currentIdx) ? 'fill-current' : ''}`} />
-              {marked.includes(currentIdx) ? 'Marked' : 'Mark for later'}
+              {marked.includes(currentIdx) }
             </button>
           </div>
 
@@ -195,7 +195,7 @@ const ExamInterface = () => {
                 ? 'bg-amber-50 border-amber-400 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700 shadow-inner' 
                 : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-amber-300'}`}
           >
-            {filterMarked ? 'Exit Review Mode' : `Review Marked (${marked.length})`}
+            {filterMarked ? 'Exit Marked Questions' : `Review Marked (${marked.length})`}
           </button>
 
           <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border dark:border-gray-700">

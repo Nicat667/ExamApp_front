@@ -1,4 +1,3 @@
-// src/pages/Auth/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, CheckCircle, ArrowRight } from 'lucide-react';
@@ -11,21 +10,49 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
-  const [error, setError] = useState('');
+  
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(''); 
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: '' });
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+
+    // Name Validation
+    if (!formData.fullName.trim()) newErrors.fullName = "Full Name is required";
+    
+    // Email Validation
+    if (!formData.email) {
+      newErrors.email = "Email Address is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email format";
+    }
+
+    // Password Validation
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    // Confirm Password Validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    return newErrors;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match!");
-      return;
-    }
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    const formErrors = validate();
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
       return;
     }
     console.log("Registered:", formData);
@@ -33,14 +60,27 @@ const Register = () => {
     navigate('/login');
   };
 
+  // --- STYLE FIX ---
+  // Background is strictly 'bg-gray-50' (light) / 'bg-gray-700' (dark).
+  // It will NOT turn white on error or focus.
+  const getInputClass = (fieldName) => {
+    const baseClass = "w-full pl-12 pr-4 py-3 rounded-xl border outline-none transition-all font-medium bg-gray-50 dark:bg-gray-700 dark:text-white";
+    
+    if (errors[fieldName]) {
+      // Error: Red Border, Background stays Gray
+      return `${baseClass} border-red-500 focus:ring-2 focus:ring-red-200`;
+    }
+    // Normal: Gray Border, Background stays Gray
+    return `${baseClass} border-gray-200 dark:border-gray-600 focus:ring-4 focus:ring-emerald-50 dark:focus:ring-emerald-900/20 focus:border-emerald-500`;
+  };
+
   return (
-    <div className="min-h-[90vh] flex justify-center items-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300 p-6">
+    <div className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300 p-6">
       <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row border border-gray-100 dark:border-gray-700">
         
-        {/* Left Side: Visual / Branding (Remains dark/emerald for contrast) */}
+        {/* Left Side: Branding */}
         <div className="md:w-5/12 bg-gradient-to-br from-emerald-900 to-teal-950 p-10 flex flex-col justify-between text-white relative overflow-hidden">
           <div className="absolute -top-20 -left-20 w-60 h-60 bg-white/10 rounded-full blur-3xl"></div>
-          
           <div className="relative z-10">
             <h1 className="text-3xl font-extrabold mb-4 flex items-center gap-3">
               <span className="text-4xl">🎓</span> ExamPortal
@@ -49,17 +89,10 @@ const Register = () => {
               Join thousands of students achieving their goals with our advanced testing platform.
             </p>
           </div>
-
           <div className="space-y-4 mt-8 relative z-10">
-            {[
-              "Real-time Results",
-              "Performance Analytics",
-              "Secure Testing Environment"
-            ].map((text, i) => (
+            {["Real-time Results", "Performance Analytics", "Secure Testing Environment"].map((text, i) => (
               <div key={i} className="flex items-center gap-3 text-sm font-medium opacity-90">
-                <div className="p-1 bg-emerald-500/20 rounded-full">
-                  <CheckCircle className="w-4 h-4 text-emerald-300" />
-                </div>
+                <div className="p-1 bg-emerald-500/20 rounded-full"><CheckCircle className="w-4 h-4 text-emerald-300" /></div>
                 <span>{text}</span>
               </div>
             ))}
@@ -73,43 +106,38 @@ const Register = () => {
             <p className="text-gray-500 dark:text-gray-400 mt-2">Start your journey with us today.</p>
           </div>
 
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm font-bold mb-6 border border-red-100 dark:border-red-800 flex items-center gap-2">
-              <span>⚠️</span> {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            
             {/* Full Name */}
             <div>
               <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-1">Full Name</label>
               <div className="relative">
-                <User className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
+                <User className={`absolute left-4 top-3.5 w-5 h-5 ${errors.fullName ? 'text-red-500' : 'text-gray-400'}`} />
                 <input 
                   type="text" 
                   name="fullName"
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-4 focus:ring-emerald-50 dark:focus:ring-emerald-900/20 focus:border-emerald-500 outline-none transition-all font-medium" 
+                  className={getInputClass('fullName')}
                   placeholder="John Doe" 
-                  required
                   onChange={handleChange}
                 />
               </div>
+              {errors.fullName && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.fullName}</p>}
             </div>
 
             {/* Email */}
             <div>
               <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-1">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
+                <Mail className={`absolute left-4 top-3.5 w-5 h-5 ${errors.email ? 'text-red-500' : 'text-gray-400'}`} />
                 <input 
                   type="email" 
                   name="email"
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-4 focus:ring-emerald-50 dark:focus:ring-emerald-900/20 focus:border-emerald-500 outline-none transition-all font-medium" 
+                  className={getInputClass('email')}
                   placeholder="student@example.com" 
-                  required
                   onChange={handleChange}
                 />
               </div>
+              {errors.email && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.email}</p>}
             </div>
 
             {/* Password Row */}
@@ -117,30 +145,31 @@ const Register = () => {
               <div>
                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-1">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
+                  <Lock className={`absolute left-4 top-3.5 w-5 h-5 ${errors.password ? 'text-red-500' : 'text-gray-400'}`} />
                   <input 
                     type="password" 
                     name="password"
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-4 focus:ring-emerald-50 dark:focus:ring-emerald-900/20 focus:border-emerald-500 outline-none transition-all font-medium" 
+                    className={getInputClass('password')}
                     placeholder="••••••••" 
-                    required
                     onChange={handleChange}
                   />
                 </div>
+                {errors.password && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.password}</p>}
               </div>
+
               <div>
                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-1">Confirm</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
+                  <Lock className={`absolute left-4 top-3.5 w-5 h-5 ${errors.confirmPassword ? 'text-red-500' : 'text-gray-400'}`} />
                   <input 
                     type="password" 
                     name="confirmPassword"
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-4 focus:ring-emerald-50 dark:focus:ring-emerald-900/20 focus:border-emerald-500 outline-none transition-all font-medium" 
+                    className={getInputClass('confirmPassword')}
                     placeholder="••••••••" 
-                    required
                     onChange={handleChange}
                   />
                 </div>
+                {errors.confirmPassword && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.confirmPassword}</p>}
               </div>
             </div>
 
