@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, Lock, ArrowRight, Loader, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import api from '../../services/api'; // <-- IMPORTED YOUR API CLIENT
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -10,26 +11,25 @@ const Login = () => {
   const [errors, setErrors] = useState({}); 
   const [loading, setLoading] = useState(false);
   
+  // --- NEW: State for password visibility ---
+  const [showPassword, setShowPassword] = useState(false);
+  
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (setter, field, value) => {
     setter(value);
-    // Clear specific field error
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
-    // Clear the bottom "Invalid credentials" error
     if (errors.auth) setErrors(prev => ({ ...prev, auth: '' }));
   };
 
   const validate = () => {
     const newErrors = {};
-    // 1. Email Format Check
     if (!email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Incorrect email format'; 
     }
-    // 2. Password Empty Check
     if (!password) {
       newErrors.password = 'Password is required';
     }
@@ -40,10 +40,8 @@ const Login = () => {
     e.preventDefault();
     setErrors({});
     
-    // 1. Run Validation
     const formErrors = validate();
 
-    // IF VALIDATION FAILS (Wrong Format/Empty), STOP HERE.
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return; 
@@ -51,34 +49,35 @@ const Login = () => {
 
     setLoading(true);
 
-    // 2. Simulated Network Request
-    setTimeout(async () => {
-      try {
-        if (email === 'admin@admin.com' && password === 'admin123') {
-          const adminUser = { name: "Administrator", email: email, role: "ADMIN" };
-          await login(adminUser); 
-          navigate('/admin/dashboard'); 
-        } 
-        else if (email === 'student@example.com' && password === 'student123') {
-          const studentUser = { name: "Student User", email: email, role: "USER" };
-          await login(studentUser);
-          navigate('/dashboard'); 
-        }
-        else {
-          // Credentials wrong (but format was correct)
-          setErrors({ auth: 'Invalid email or password' });
-        }
-      } catch (err) {
-        setErrors({ auth: 'An unexpected error occurred.' });
-      } finally {
-        setLoading(false);
-      }
-    }, 800); 
+    try {
+      // --- REAL BACKEND REQUEST ---
+      const response = await api.post('/auth/login', {
+        email: email,
+        password: password
+      });
+
+      
+      // Save the JWT token to LocalStorage
+      localStorage.setItem('token', response.data.token);
+      
+      // Grab the part of the email before the '@' symbol to use as a temporary name
+      const tempName = email.split('@')[0];
+      
+      // Update Context (Now with a 'name' property so Navbar doesn't crash!)
+      const loggedInUser = { name: response.data.fullName, email: email, role: "USER" }; 
+      await login(loggedInUser);
+      
+      navigate('/dashboard'); 
+      
+    } catch (err) {
+      // Catch backend errors (e.g., "User not found" or "Bad Credentials")
+      const errorMessage = err.response?.data?.message || 'Invalid email or password';
+      setErrors({ auth: errorMessage });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // --- FIXED CSS CLASS LOGIC ---
-  // 1. Background is ALWAYS 'bg-gray-50' (light mode) or 'bg-gray-700' (dark mode).
-  // 2. Only the BORDER changes color on error.
   const getInputClass = (fieldError) => `
     w-full pl-12 pr-4 py-3 rounded-xl border outline-none transition-all
     bg-gray-50 dark:bg-gray-700 dark:text-white
@@ -89,9 +88,7 @@ const Login = () => {
   `;
 
   return (
-    // Changed h-[85vh] to min-h-screen to fix "shorter" issue
     <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 px-6 py-12">
-      
       <form 
         onSubmit={handleSubmit} 
         noValidate 
@@ -115,10 +112,11 @@ const Login = () => {
                 type="email" 
                 placeholder="student@example.com" 
                 value={email} 
+                autoComplete="off" // <-- PREVENTS AUTOFILL
                 onChange={(e) => handleChange(setEmail, 'email', e.target.value)} 
+                disabled={loading}
               />
             </div>
-            {/* Field Error: Only format/empty errors */}
             {errors.email && (
               <p className="text-red-500 text-xs mt-1 ml-1 font-medium animate-pulse">
                 {errors.email}
@@ -134,14 +132,23 @@ const Login = () => {
             <div className="relative">
               <Lock className={`absolute left-4 top-3.5 w-5 h-5 ${errors.password || errors.auth ? 'text-red-500' : 'text-gray-400'}`} />
               <input 
-                className={getInputClass(errors.password)}
-                type="password" 
+                className={`${getInputClass(errors.password)} pr-12`} // <-- Added pr-12 for icon spacing
+                type={showPassword ? "text" : "password"} // <-- DYNAMIC TYPE
                 placeholder="••••••••" 
                 value={password}
+                autoComplete="new-password" // <-- STOPS BROWSER PASSWORD MANAGER
                 onChange={(e) => handleChange(setPassword, 'password', e.target.value)}
+                disabled={loading}
               />
+              {/* --- NEW: Eye Icon Button --- */}
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-3.5 text-gray-400 hover:text-emerald-600 focus:outline-none transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
-            {/* Field Error: Only empty errors */}
             {errors.password && (
               <p className="text-red-500 text-xs mt-1 ml-1 font-medium animate-pulse">
                 {errors.password}
