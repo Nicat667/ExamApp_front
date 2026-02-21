@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // <-- ADDED useEffect
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, Loader, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import api from '../../services/api'; // <-- IMPORTED YOUR API CLIENT
+
+import api from '../../services/api'; 
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -10,12 +11,19 @@ const Login = () => {
   
   const [errors, setErrors] = useState({}); 
   const [loading, setLoading] = useState(false);
-  
-  // --- NEW: State for password visibility ---
   const [showPassword, setShowPassword] = useState(false);
   
-  const { login } = useAuth();
+  // <-- PULL 'user' FROM CONTEXT AS WELL
+  const { login, user } = useAuth(); 
   const navigate = useNavigate();
+
+  // --- NEW: THE TRAFFIC COP ---
+  // If the user is already logged in, bounce them to the dashboard automatically
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleChange = (setter, field, value) => {
     setter(value);
@@ -50,27 +58,23 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // --- REAL BACKEND REQUEST ---
       const response = await api.post('/auth/login', {
         email: email,
         password: password
       });
-
       
-      // Save the JWT token to LocalStorage
       localStorage.setItem('token', response.data.token);
       
-      // Grab the part of the email before the '@' symbol to use as a temporary name
-      const tempName = email.split('@')[0];
+      const loggedInUser = { 
+        name: response.data.fullName, 
+        email: email, 
+        role: response.data.role 
+      }; 
       
-      // Update Context (Now with a 'name' property so Navbar doesn't crash!)
-      const loggedInUser = { name: response.data.fullName, email: email, role: "USER" }; 
       await login(loggedInUser);
-      
       navigate('/dashboard'); 
       
     } catch (err) {
-      // Catch backend errors (e.g., "User not found" or "Bad Credentials")
       const errorMessage = err.response?.data?.message || 'Invalid email or password';
       setErrors({ auth: errorMessage });
     } finally {
@@ -100,7 +104,6 @@ const Login = () => {
         </div>
         
         <div className="space-y-6">
-          {/* Email Input */}
           <div>
             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-1">
               Email Address
@@ -112,7 +115,7 @@ const Login = () => {
                 type="email" 
                 placeholder="student@example.com" 
                 value={email} 
-                autoComplete="off" // <-- PREVENTS AUTOFILL
+                autoComplete="off" 
                 onChange={(e) => handleChange(setEmail, 'email', e.target.value)} 
                 disabled={loading}
               />
@@ -124,7 +127,6 @@ const Login = () => {
             )}
           </div>
 
-          {/* Password Input */}
           <div>
             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-1">
               Password
@@ -132,15 +134,14 @@ const Login = () => {
             <div className="relative">
               <Lock className={`absolute left-4 top-3.5 w-5 h-5 ${errors.password || errors.auth ? 'text-red-500' : 'text-gray-400'}`} />
               <input 
-                className={`${getInputClass(errors.password)} pr-12`} // <-- Added pr-12 for icon spacing
-                type={showPassword ? "text" : "password"} // <-- DYNAMIC TYPE
+                className={`${getInputClass(errors.password)} pr-12`} 
+                type={showPassword ? "text" : "password"} 
                 placeholder="••••••••" 
                 value={password}
-                autoComplete="new-password" // <-- STOPS BROWSER PASSWORD MANAGER
+                autoComplete="new-password" 
                 onChange={(e) => handleChange(setPassword, 'password', e.target.value)}
                 disabled={loading}
               />
-              {/* --- NEW: Eye Icon Button --- */}
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -156,7 +157,6 @@ const Login = () => {
             )}
           </div>
           
-          {/* --- BOTTOM ERROR (Invalid Credentials) --- */}
           {errors.auth && (
             <div className="flex items-center justify-center gap-2 text-red-500 text-sm font-bold animate-pulse pt-2">
               <AlertCircle className="w-4 h-4" />

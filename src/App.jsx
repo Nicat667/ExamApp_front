@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -8,15 +7,29 @@ import Navbar from './components/Navbar';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import StudentDashboard from './pages/Dashboard/StudentDashboard';
-import AdminDashboard from './pages/Dashboard/AdminDashboard'; // NEW: Import Admin Dashboard
+import AdminDashboard from './pages/Dashboard/AdminDashboard'; 
 import ExamSetup from './pages/Exam/ExamSetup';
 import ExamInterface from './pages/Exam/ExamInterface';
 import ExamResult from './pages/Exam/ExamResult';
 
-// Simple Guard to protect routes
+// Guard to protect student/general routes
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
-  return user ? children : <Navigate to="/login" />;
+  // If no user is logged in, kick them back to login
+  return user ? children : <Navigate to="/login" replace />;
+};
+
+// Guard to protect Admin-only routes
+const AdminRoute = ({ children }) => {
+  const { user } = useAuth();
+  
+  // Not logged in? Go to login.
+  if (!user) return <Navigate to="/login" replace />;
+  
+  // Logged in but NOT an Admin? Kick them to the student dashboard.
+  if (user.role !== 'ADMIN') return <Navigate to="/dashboard" replace />; 
+  
+  return children;
 };
 
 function App() {
@@ -28,7 +41,7 @@ function App() {
         
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
@@ -39,12 +52,11 @@ function App() {
             </PrivateRoute>
           } />
 
-          {/* NEW: Admin Route */}
-          {/* We reuse PrivateRoute for now since we are just testing */}
+          {/* Admin Routes */}
           <Route path="/admin/dashboard" element={
-            <PrivateRoute>
+            <AdminRoute>
               <AdminDashboard />
-            </PrivateRoute>
+            </AdminRoute>
           } />
 
           {/* Exam Routes */}
@@ -67,7 +79,7 @@ function App() {
           } />
 
           {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
 
         </Routes>
       </BrowserRouter>
