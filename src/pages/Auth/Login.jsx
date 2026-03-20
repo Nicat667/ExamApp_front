@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // <-- ADDED useEffect
+import React, { useState, useEffect } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, Loader, AlertCircle, Eye, EyeOff } from 'lucide-react';
@@ -13,15 +13,22 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  // <-- PULL 'user' FROM CONTEXT AS WELL
   const { login, user } = useAuth(); 
   const navigate = useNavigate();
 
-  // --- NEW: THE TRAFFIC COP ---
-  // If the user is already logged in, bounce them to the dashboard automatically
+  // --- FIXED: THE SMART TRAFFIC COP ---
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true });
+      // Check role directly from the Context user object
+      const userRole = user.role?.toUpperCase();
+      
+      if (userRole === 'TEACHER') {
+        navigate('/teacher/dashboard', { replace: true });
+      } else if (userRole === 'ADMIN') {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true }); // Student
+      }
     }
   }, [user, navigate]);
 
@@ -71,8 +78,9 @@ const Login = () => {
         role: response.data.role 
       }; 
       
+      // Update global AuthContext. 
+      // NOTE: This will trigger the useEffect above, which handles the correct routing!
       await login(loggedInUser);
-      navigate('/dashboard'); 
       
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Invalid email or password';

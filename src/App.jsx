@@ -12,6 +12,7 @@ import ExamSetup from './pages/Exam/ExamSetup';
 import ExamInterface from './pages/Exam/ExamInterface';
 import ExamResult from './pages/Exam/ExamResult';
 import VerifyOtp from './pages/Auth/VerifyOtp';
+import TeacherDashboard from './pages/Dashboard/TeacherDashboard'; // <-- This will light up now!
 
 // Guard to protect student/general routes
 const PrivateRoute = ({ children }) => {
@@ -24,11 +25,18 @@ const PrivateRoute = ({ children }) => {
 const AdminRoute = ({ children }) => {
   const { user } = useAuth();
   
-  // Not logged in? Go to login.
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role?.toUpperCase() !== 'ADMIN') return <Navigate to="/dashboard" replace />; 
   
-  // Logged in but NOT an Admin? Kick them to the student dashboard.
-  if (user.role !== 'ADMIN') return <Navigate to="/dashboard" replace />; 
+  return children;
+};
+
+// --- NEW: Guard to protect Teacher-only routes ---
+const TeacherRoute = ({ children }) => {
+  const { user } = useAuth();
+  
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role?.toUpperCase() !== 'TEACHER') return <Navigate to="/dashboard" replace />; 
   
   return children;
 };
@@ -52,6 +60,13 @@ function App() {
             <PrivateRoute>
               <StudentDashboard />
             </PrivateRoute>
+          } />
+
+          {/* --- NEW: Teacher Routes --- */}
+          <Route path="/teacher/dashboard" element={
+            <TeacherRoute>
+              <TeacherDashboard />
+            </TeacherRoute>
           } />
 
           {/* Admin Routes */}
