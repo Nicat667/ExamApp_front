@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Lock, CheckCircle, ArrowRight, Loader, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, CheckCircle, ArrowRight, Loader, Eye, EyeOff, GraduationCap, Briefcase } from 'lucide-react'; // <-- Added GraduationCap and Briefcase
 import api from '../../services/api'; 
 
 const Register = () => {
@@ -9,7 +9,8 @@ const Register = () => {
     fullName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'Student' // <-- Default role set to STUDENT
   });
   
   const [errors, setErrors] = useState({});
@@ -24,6 +25,11 @@ const Register = () => {
     if (errors[e.target.name]) {
       setErrors({ ...errors, [e.target.name]: '' });
     }
+  };
+
+  // Custom handler for role selection
+  const handleRoleChange = (selectedRole) => {
+    setFormData({ ...formData, role: selectedRole });
   };
 
   const validate = () => {
@@ -67,14 +73,18 @@ const Register = () => {
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
-        confirmPassword: formData.confirmPassword
+        confirmPassword: formData.confirmPassword,
+        role: formData.role // <-- Role is now sent to backend
       });
 
-      setSuccessMessage("Registration successful! Please check your email to confirm.");
+      // Change the success message slightly
+      setSuccessMessage("Registration successful! Redirecting to verification...");
       
+      // REPLACE THE OLD setTimeout WITH THIS:
       setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+        // We pass the email in the 'state' so VerifyOtp.jsx knows who is verifying!
+        navigate('/verify-otp', { state: { email: formData.email } });
+      }, 1500);
 
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Registration failed. Try again.';
@@ -99,19 +109,22 @@ const Register = () => {
         
         {/* Left Side: Branding */}
         <div className="md:w-5/12 bg-gradient-to-br from-emerald-900 to-teal-950 p-10 flex flex-col justify-between text-white relative overflow-hidden">
-          <div className="absolute -top-20 -left-20 w-60 h-60 bg-white/10 rounded-full blur-3xl"></div>
+          {/* Decorative background elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-teal-500/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+          
           <div className="relative z-10">
             <h1 className="text-3xl font-extrabold mb-4 flex items-center gap-3">
               <span className="text-4xl">🎓</span> ExamPortal
             </h1>
-            <p className="text-emerald-100 leading-relaxed">
-              Join thousands of students achieving their goals with our advanced testing platform.
+            <p className="text-emerald-100 leading-relaxed text-sm md:text-base">
+              Join thousands of students and educators achieving their goals with our advanced testing platform.
             </p>
           </div>
           <div className="space-y-4 mt-8 relative z-10">
             {["Real-time Results", "Performance Analytics", "Secure Testing Environment"].map((text, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm font-medium opacity-90">
-                <div className="p-1 bg-emerald-500/20 rounded-full"><CheckCircle className="w-4 h-4 text-emerald-300" /></div>
+              <div key={i} className="flex items-center gap-3 text-sm font-medium opacity-90 bg-black/10 p-3 rounded-xl backdrop-blur-sm border border-white/5">
+                <div className="p-1 bg-emerald-500/30 rounded-full shadow-inner"><CheckCircle className="w-4 h-4 text-emerald-300" /></div>
                 <span>{text}</span>
               </div>
             ))}
@@ -119,15 +132,15 @@ const Register = () => {
         </div>
 
         {/* Right Side: Form */}
-        <div className="md:w-7/12 p-10 bg-white dark:bg-gray-800">
-          <div className="mb-8">
+        <div className="md:w-7/12 p-8 md:p-10 bg-white dark:bg-gray-800">
+          <div className="mb-6">
             <h2 className="text-3xl font-bold text-gray-800 dark:text-white">Create Account</h2>
             <p className="text-gray-500 dark:text-gray-400 mt-2">Start your journey with us today.</p>
           </div>
 
           {/* Stylish Success Banner */}
           {successMessage && (
-            <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-3 transition-all animate-pulse">
+            <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-3 transition-all animate-pulse shadow-sm">
               <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               <p className="text-emerald-800 dark:text-emerald-200 font-medium text-sm">
                 {successMessage}
@@ -137,6 +150,37 @@ const Register = () => {
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             
+            {/* NEW: Role Selection */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">I am a...</label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => handleRoleChange('Student')}
+                  className={`py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all font-bold ${
+                    formData.role === 'Student'
+                      ? 'bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-900/40 dark:border-emerald-500 dark:text-emerald-300 ring-2 ring-emerald-200 dark:ring-emerald-900'
+                      : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <GraduationCap className="w-5 h-5" />
+                  Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRoleChange('Teacher')}
+                  className={`py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all font-bold ${
+                    formData.role === 'Teacher'
+                      ? 'bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-900/40 dark:border-emerald-500 dark:text-emerald-300 ring-2 ring-emerald-200 dark:ring-emerald-900'
+                      : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <Briefcase className="w-5 h-5" />
+                  Teacher
+                </button>
+              </div>
+            </div>
+
             {/* Full Name */}
             <div>
               <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-1">Full Name</label>
@@ -145,8 +189,8 @@ const Register = () => {
                 <input 
                   type="text" 
                   name="fullName"
-                  value={formData.fullName} // <-- BOUND TO STATE
-                  autoComplete="off"        // <-- PREVENTS AUTOFILL
+                  value={formData.fullName} 
+                  autoComplete="off"        
                   className={getInputClass('fullName')}
                   placeholder="John Doe" 
                   onChange={handleChange}
@@ -164,10 +208,10 @@ const Register = () => {
                 <input 
                   type="email" 
                   name="email"
-                  value={formData.email}    // <-- BOUND TO STATE
-                  autoComplete="off"        // <-- PREVENTS AUTOFILL
+                  value={formData.email}    
+                  autoComplete="off"        
                   className={getInputClass('email')}
-                  placeholder="student@example.com" 
+                  placeholder="user@example.com" 
                   onChange={handleChange}
                   disabled={loading}
                 />
@@ -184,8 +228,8 @@ const Register = () => {
                   <input 
                     type={showPassword ? "text" : "password"} 
                     name="password"
-                    value={formData.password}         // <-- BOUND TO STATE
-                    autoComplete="new-password"       // <-- STOPS BROWSER PASSWORD MANAGER
+                    value={formData.password}         
+                    autoComplete="new-password"       
                     className={`${getInputClass('password')} pr-12`}
                     placeholder="••••••••" 
                     onChange={handleChange}
@@ -209,8 +253,8 @@ const Register = () => {
                   <input 
                     type={showConfirmPassword ? "text" : "password"} 
                     name="confirmPassword"
-                    value={formData.confirmPassword}  // <-- BOUND TO STATE
-                    autoComplete="new-password"       // <-- STOPS BROWSER PASSWORD MANAGER
+                    value={formData.confirmPassword}  
+                    autoComplete="new-password"       
                     className={`${getInputClass('confirmPassword')} pr-12`}
                     placeholder="••••••••" 
                     onChange={handleChange}
@@ -237,10 +281,10 @@ const Register = () => {
             </button>
           </form>
 
-          <div className="text-center mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
+          <div className="text-center mt-6 pt-5 border-t border-gray-100 dark:border-gray-700">
             <p className="text-gray-500 dark:text-gray-400 text-sm">
               Already have an account?{' '}
-              <Link to="/login" className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline">
+              <Link to="/login" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
                 Sign In here
               </Link>
             </p>

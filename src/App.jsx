@@ -11,6 +11,7 @@ import AdminDashboard from './pages/Dashboard/AdminDashboard';
 import ExamSetup from './pages/Exam/ExamSetup';
 import ExamInterface from './pages/Exam/ExamInterface';
 import ExamResult from './pages/Exam/ExamResult';
+import VerifyOtp from './pages/Auth/VerifyOtp';
 
 // Guard to protect student/general routes
 const PrivateRoute = ({ children }) => {
@@ -44,6 +45,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-otp" element={<VerifyOtp />} />
           
           {/* Student Routes */}
           <Route path="/dashboard" element={
