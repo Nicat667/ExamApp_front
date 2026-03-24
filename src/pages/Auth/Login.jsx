@@ -1,33 +1,33 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, Loader, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
-import api from '../../services/api'; 
+import api from '../../services/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
-  const [errors, setErrors] = useState({}); 
+
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
-  const { login, user } = useAuth(); 
+
+  const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  // --- FIXED: THE SMART TRAFFIC COP ---
+  // --- UPDATED: BULLETPROOF ROLE CHECKER ---
   useEffect(() => {
     if (user) {
-      // Check role directly from the Context user object
-      const userRole = user.role?.toUpperCase();
-      
-      if (userRole === 'TEACHER') {
-        navigate('/teacher/dashboard', { replace: true });
-      } else if (userRole === 'ADMIN') {
-        navigate('/admin/dashboard', { replace: true });
+      // Safely convert role to uppercase string (handles 'ROLE_ADMIN' or 'Admin' or arrays)
+      const userRole = user.role ? String(user.role).toUpperCase() : '';
+
+      if (userRole.includes('TEACHER')) {
+        navigate('/teacher/dashboard', { replace: true }); // was '/teacher'
+      } else if (userRole.includes('ADMIN')) {
+        navigate('/admin/dashboard', { replace: true });   // was '/admin'
       } else {
-        navigate('/dashboard', { replace: true }); // Student
+        navigate('/dashboard', { replace: true });
       }
     }
   }, [user, navigate]);
@@ -43,7 +43,7 @@ const Login = () => {
     if (!email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Incorrect email format'; 
+      newErrors.email = 'Incorrect email format';
     }
     if (!password) {
       newErrors.password = 'Password is required';
@@ -54,12 +54,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
-    
+
     const formErrors = validate();
 
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
-      return; 
+      return;
     }
 
     setLoading(true);
@@ -69,19 +69,18 @@ const Login = () => {
         email: email,
         password: password
       });
-      
+
       localStorage.setItem('token', response.data.token);
-      
-      const loggedInUser = { 
-        name: response.data.fullName, 
-        email: email, 
-        role: response.data.role 
-      }; 
-      
+
+      const loggedInUser = {
+        name: response.data.fullName,
+        email: email,
+        role: response.data.role
+      };
+
       // Update global AuthContext. 
-      // NOTE: This will trigger the useEffect above, which handles the correct routing!
       await login(loggedInUser);
-      
+
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Invalid email or password';
       setErrors({ auth: errorMessage });
@@ -94,23 +93,23 @@ const Login = () => {
     w-full pl-12 pr-4 py-3 rounded-xl border outline-none transition-all
     bg-gray-50 dark:bg-gray-700 dark:text-white
     ${fieldError || errors.auth
-      ? 'border-red-500 focus:ring-2 focus:ring-red-200 text-red-900 dark:text-red-100 placeholder-red-300' 
+      ? 'border-red-500 focus:ring-2 focus:ring-red-200 text-red-900 dark:text-red-100 placeholder-red-300'
       : 'border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'
     }
   `;
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 px-6 py-12">
-      <form 
-        onSubmit={handleSubmit} 
-        noValidate 
+      <form
+        onSubmit={handleSubmit}
+        noValidate
         className="bg-white dark:bg-gray-800 p-10 rounded-3xl shadow-xl w-full max-w-md border border-gray-100 dark:border-gray-700 transition-all"
       >
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 dark:text-white mb-2 tracking-tight">Welcome Back</h1>
           <p className="text-gray-500 dark:text-gray-400">Please enter your details to sign in</p>
         </div>
-        
+
         <div className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-1">
@@ -118,13 +117,13 @@ const Login = () => {
             </label>
             <div className="relative">
               <Mail className={`absolute left-4 top-3.5 w-5 h-5 ${errors.email || errors.auth ? 'text-red-500' : 'text-gray-400'}`} />
-              <input 
+              <input
                 className={getInputClass(errors.email)}
-                type="email" 
-                placeholder="student@example.com" 
-                value={email} 
-                autoComplete="off" 
-                onChange={(e) => handleChange(setEmail, 'email', e.target.value)} 
+                type="email"
+                placeholder="student@example.com"
+                value={email}
+                autoComplete="off"
+                onChange={(e) => handleChange(setEmail, 'email', e.target.value)}
                 disabled={loading}
               />
             </div>
@@ -141,16 +140,16 @@ const Login = () => {
             </label>
             <div className="relative">
               <Lock className={`absolute left-4 top-3.5 w-5 h-5 ${errors.password || errors.auth ? 'text-red-500' : 'text-gray-400'}`} />
-              <input 
-                className={`${getInputClass(errors.password)} pr-12`} 
-                type={showPassword ? "text" : "password"} 
-                placeholder="••••••••" 
+              <input
+                className={`${getInputClass(errors.password)} pr-12`}
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
                 value={password}
-                autoComplete="new-password" 
+                autoComplete="new-password"
                 onChange={(e) => handleChange(setPassword, 'password', e.target.value)}
                 disabled={loading}
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-3.5 text-gray-400 hover:text-emerald-600 focus:outline-none transition-colors"
@@ -164,7 +163,7 @@ const Login = () => {
               </p>
             )}
           </div>
-          
+
           {errors.auth && (
             <div className="flex items-center justify-center gap-2 text-red-500 text-sm font-bold animate-pulse pt-2">
               <AlertCircle className="w-4 h-4" />
@@ -172,7 +171,7 @@ const Login = () => {
             </div>
           )}
 
-          <button 
+          <button
             type="submit"
             disabled={loading}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"

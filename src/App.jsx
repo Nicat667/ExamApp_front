@@ -12,32 +12,29 @@ import ExamSetup from './pages/Exam/ExamSetup';
 import ExamInterface from './pages/Exam/ExamInterface';
 import ExamResult from './pages/Exam/ExamResult';
 import VerifyOtp from './pages/Auth/VerifyOtp';
-import TeacherDashboard from './pages/Dashboard/TeacherDashboard'; // <-- This will light up now!
+import TeacherDashboard from './pages/Dashboard/TeacherDashboard';
 
 // Guard to protect student/general routes
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
-  // If no user is logged in, kick them back to login
   return user ? children : <Navigate to="/login" replace />;
 };
 
 // Guard to protect Admin-only routes
+// FIX: use .includes() instead of strict !== to handle 'ROLE_ADMIN' format
 const AdminRoute = ({ children }) => {
   const { user } = useAuth();
-  
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role?.toUpperCase() !== 'ADMIN') return <Navigate to="/dashboard" replace />; 
-  
+  if (!user.role?.toUpperCase().includes('ADMIN')) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
-// --- NEW: Guard to protect Teacher-only routes ---
+// Guard to protect Teacher-only routes
+// FIX: use .includes() instead of strict !== to handle 'ROLE_TEACHER' format
 const TeacherRoute = ({ children }) => {
   const { user } = useAuth();
-  
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role?.toUpperCase() !== 'TEACHER') return <Navigate to="/dashboard" replace />; 
-  
+  if (!user.role?.toUpperCase().includes('TEACHER')) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
@@ -45,7 +42,6 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        {/* Navbar stays at the top for both Student and Admin for now */}
         <Navbar />
         
         <Routes>
@@ -62,7 +58,7 @@ function App() {
             </PrivateRoute>
           } />
 
-          {/* --- NEW: Teacher Routes --- */}
+          {/* Teacher Routes */}
           <Route path="/teacher/dashboard" element={
             <TeacherRoute>
               <TeacherDashboard />
@@ -97,7 +93,6 @@ function App() {
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/login" replace />} />
-
         </Routes>
       </BrowserRouter>
     </AuthProvider>
